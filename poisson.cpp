@@ -1,4 +1,4 @@
-// blalbjalk calculates the first derivative of a function
+// calculates the first derivative of a function
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
@@ -25,6 +25,7 @@ int main()
     x_min = 0.;
     x_max = 1.;
     x = x_min; 
+    u_min = 0;                                      // derichlet-boundaries   //
     u_max = 0;
     h_step = (x_max - x_min) / (n + 1);
     
