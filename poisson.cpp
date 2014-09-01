@@ -7,22 +7,19 @@
 using namespace std;
 using namespace arma;
 
-//void derivative1 (int, double, double, double *, double *);
-//void derivative2 (int, double, double, double *, double *);
-//void output(double *, double *, double, int)
-double func (double);
-void sec_derivative (
+double func (double x);
+void tridiag (double h_step, int n, double * u); 
 
 
 int main()
 {   
-    unsigned int n;                                 // number of steps        //
+    unsigned int n, i;                              // number of steps        //
     double x, x_min, x_max;                         // range of variable      // 
     double *u, u_min, u_max;                        // derichlet boundaries   //
     double h_step;                                  // stepsize               //
     
-    n = 50;
-    x_min = 0.;
+    n = 50;                                         // number of steps        //
+    x_min = 0.;                                     //                        //
     x_max = 1.;
     x = x_min; 
     u_min = 0;                                      // derichlet-boundaries   //
@@ -33,23 +30,15 @@ int main()
     u[0] = u_min;
     u[n+1] = u_max;
     
-    sec_derivative (h_step, x, 
-    // Dimension
-    //int n = atoi(argv[1]);
-    //mat A(n,p);
-    //C = zeros<mat> (n,m);
-    //int _numRowA = A.n_rows;
+    tridiag (h_step, n, u); 
     
-    
-    cout << tridiag[0] << func(20.) << endl;
+    for (i = 0; i <= n + 1; i++)
+    {
+    cout << u[i] << endl;
+    }
     delete [] u;
     return 0;
 }
-
-//void derivative1 (int number_of_steps, double x, double initial_step, double \
-//        *h_step, double *computed_derivative1)
-//{
-//}
 
 double func (double x)
 {
@@ -59,27 +48,22 @@ double func (double x)
     return f; 
 }
 
-void sec_derivative (int number_of_steps, double x, double initial_step, \
-        double *h_step, double *computed_derivative)
-{
-    vec tridiag(2);
-    tridiag[0] = -1.;
-    tridiag[1] = 2;
-
-     
-}
-
-void tridiag (int n, double u, double initial_step, \
-        double *h_step, double *computed_derivative){
+void tridiag (double h_step, int n, double *u){
+    double a,b,c;
     double btemp;
-    vec temp(number_of_steps);
+    unsigned int i; 
+    vec temp(n);
 
-    btemp = b[1];
-    u[i] = f[1]/btemp;
+    a = -1;
+    c = a ;
+    b = 2 ; 
+
+    btemp = b;
+    u[i] = func(h_step*1)/btemp;
     for(i = 2 ; i <= n; i++){
-        temp[i] = c[i-1]/temp;
-        btemp = b[i] - a[i]*temp[i];
-        u[i] = (f[i] - a[i]*u[i-1])/temp;
+        temp[i] = c/btemp;
+        btemp = b - a*temp[i];
+        u[i] = (func(h_step*i) - a*u[i-1])/btemp;
     } 
 
     for(i = n-1; i >= 1; i--){
@@ -88,7 +72,4 @@ void tridiag (int n, double u, double initial_step, \
 
 
 }
-
-/*void derivative2 (int number_of_steps, double x, double initial_step, double \
-        *h_step, double *computed_derivative); */
 
