@@ -1,4 +1,4 @@
-// calculates the first derivative of a function
+// blalbjalk calculates the first derivative of a function
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
