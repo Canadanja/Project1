@@ -1,4 +1,4 @@
-// calculates the first derivative of a function
+// calculates the one-dimensional poisson equation
 #include <iostream>
 #include <stdlib.h>
 #include <math.h>
@@ -7,8 +7,8 @@
 using namespace std;
 using namespace arma;
 
-double func (double x);
-void tridiag (double h_step, int n, double * u); 
+double func (double, double);
+void tridiag (double, int, double *); 
 
 
 int main()
@@ -26,9 +26,9 @@ int main()
     u_max = 0;                                      //                        //
     h_step = (x_max - x_min) / (n + 1);             // stepsize               // 
     
-    u = new double[n + 2];                          // initialize array for   //
+    u = new double[n];                              // initialize array for   //
     u[0] = u_min;                                   // solution u             //
-    u[n+1] = u_max;                                 //                        // 
+    u[n] = u_max;                                   //                        // 
     
     // tridiag solves the equation Au = f
     tridiag (h_step, n, u); 
@@ -36,19 +36,19 @@ int main()
     // output
     for (i = 0; i <= n + 1; i++)
     {
-    cout << u[i] << endl;
+        cout << h_step*i << "    " << u[i] << endl;
     }
     
     delete [] u;
     return 0;
 }
 
-double func (double x)
+double func (double h_step, double x)
 {
     // second derivative rhs-function 
     double f;
 
-    f = 100.*exp(-10.*x);
+    f = h_step*h_step*100.*exp(-10.*x);
     return f; 
 }
 
@@ -65,11 +65,11 @@ void tridiag (double h_step, int n, double *u){
     b = 2 ; 
 
     btemp = b;
-    u[1] = func(h_step*1)/btemp;
+    u[1] = func(h_step, h_step*1)/btemp;
     for(i = 2 ; i <= n; i++){
         temp[i] = c/btemp;
         btemp = b - a*temp[i];
-        u[i] = (func(h_step*i) - a*u[i-1])/btemp;
+        u[i] = (func(h_step, h_step*i) - a*u[i-1])/btemp;
     } 
 
     for(i = n-1; i >= 1; i--){
