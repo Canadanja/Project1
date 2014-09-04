@@ -83,15 +83,11 @@ void tridiag (double h_step, int n, double *u){
 void tridiag_poisson (double h_step, int n, double *u){
     /* Just usable for poisson equation tridiagonal matrices. Reduces number  *
      * of FLOPs to 6N.                                                        */
-    double a,b,c;
     unsigned int i;
     vec ftemp(n);
 
-    a = -1;
-    b = 2 ;
-
     for (i = 2; i <= n; i++){
-        ftemp[i] = ftemp[i-1] + func(h_step, h_step*i);
+        ftemp[i] = ftemp[i-1] + i*func(h_step, h_step*i);
     }
 
     for (i = n-1; i >= 1; i--){
