@@ -4,6 +4,7 @@
 #include <math.h>
 #include <cmath>
 #include <armadillo>
+#include <time.h>
 
 using namespace std;
 using namespace arma;
@@ -11,53 +12,65 @@ using namespace arma;
 double func (double, double);
 double solution(double);
 double error (double, unsigned int, double *);
-void tridiag (double, unsigned int, double *); 
+void tridiag (double, unsigned int, double *);
 void tridiag_poisson (double, unsigned int, double *); 
-
-
+vec lu_armadillo (double, unsigned int);
 
 int main()
 {   
+    clock_t time_tri, time_lu;
     unsigned int n, i;                              
-    double *x, x_min, x_max;                        
+    int j;
+    double x_min, x_max;                        
     double *u, u_min, u_max;                      
     double h_step, err;                               
+    vec v;
     
     n = 10;                                         // number of steps        //
     x_min = 0.;                                     // area of calculation    //
     x_max = 1.;                                     //                        //
-    x = new double[n+2];                            // initial value for var. // 
+    h_step = (x_max - x_min) / (n + 1);             // stepsize               // 
 
     u_min = 0.;                                     // dirichlet-boundaries   //
     u_max = 0.;                                     //                        //
-    h_step = (x_max - x_min) / (n + 1);             // stepsize               // 
     
     u = new double[n+2];                            // initialize array for   //
     
     u[0] = u_min;                                   // solution u             //
     u[n+1] = u_max;                                 //                        // 
-    
+
     // tridiag solves the equation Au = f
+    // tridiagonal poisson code
+    time_tri = clock();
     tridiag_poisson (h_step, n, u); 
-    
+    //tridiag (h_step, n, u);
+    time_tri = clock() - time_tri;    
+
+    // general lu decomposition code
+    time_lu = clock();
+    v = lu_armadillo(h_step, n);
+    time_lu = clock() - time_lu;
+
     err = error(h_step, n, u);
 
     // output
+    cout << "--------------------------------------------" << endl;
     cout << "Maximum Error: " << err << endl;
+    cout << "Calculation time / ms (Own Algorithm): " << time_tri << endl;
+    cout << "Calculation time / ms (Armadillo LU Dec.): "  << time_lu << endl;
     cout << endl;
-    cout << "---------------------------------" << endl;
-    cout << "x" << "    " << "u" << endl;
-    for (i = 0; i <= n + 1; i++)
+    cout << "--------------------------------------------" << endl;
+    cout << "x" << "    " << "u" << "    " << "v" << endl;
+    cout << h_step*0 << "    " << u[0] << "    " << v[n] << endl; 
+    for (i = 1; i <= n + 1; i++)
     {
-        cout << h_step*i << "    " << u[i] << endl;
+        cout << h_step*i << "    " << u[i] << "    " << v[i-1] << endl;
     }
     
     delete [] u;
     return 0;
 }
 
-
-//TODO: Change the call of func and or func itself because of unnecessary FLOPs
 void tridiag (double h_step, unsigned int n, double *u){
     /* Uses the Thomas-Algorithm, code from "Numerical Recipes,               *  
      * Third Edition", p. 56 f.                                               */
@@ -73,17 +86,16 @@ void tridiag (double h_step, unsigned int n, double *u){
     btemp = b;
     u[1] = func(h_step, h_step*1.)/btemp;
     for(i = 2 ; i <= n; i++){
-        temp[i] = c/btemp;
-        btemp = b - a*temp[i];
-        u[i] = (func(h_step, h_step*i) - a*u[i-1])/btemp;
+        temp[i] = c/btemp;                                  // 1 FLOP
+        btemp = b - a*temp[i];                              // 2 FLOPs
+        u[i] = (func(h_step, h_step*i) - a*u[i-1])/btemp;   // 3 FLOPs
     } 
 
     for(i = n; i >= 1; i--){
-        u[i] -= temp[i+1]*u[i+1];
-    }
+        u[i] -= temp[i+1]*u[i+1];                           // 2 FLOPs
+    }                                                       // -> 8N FLOPs
 }
 
-//TODO: Change the call of func and or func itself because of unnecessary FLOPs
 void tridiag_poisson (double h_step, unsigned int n, double *u){
     /* Just usable for poisson equation tridiagonal matrices. Reduces number  *
      * of FLOPs to 6N.                                                        */
@@ -92,12 +104,12 @@ void tridiag_poisson (double h_step, unsigned int n, double *u){
 
     ftemp[1] = func(h_step, h_step*1);
     for (i = 2; i <= n; i++){
-        ftemp[i] = ftemp[i-1] + i*func(h_step, h_step*i);
+        ftemp[i] = ftemp[i-1] + i*func(h_step, h_step*i);   // 2 FLOPs
     }
 
     for (i = n; i >= 1; i--){
-        u[i] = (ftemp[i] + u[i+1]*i)/(1.+i);
-    }
+        u[i] = (ftemp[i] + u[i+1]*i)/(1.+i);                // 4 FLOPs
+    }                                                       // 6 FLOPs
 }
 
 double error (double h_step, unsigned int n, double *u){
@@ -131,3 +143,27 @@ double solution (double x)
     return f; 
 }
 
+vec lu_armadillo(double h_step, unsigned int n)
+{
+    unsigned int i;
+
+    vec f(n);
+    mat A(n,n);
+    vec y, x; 
+    mat L, U, P;
+    
+
+    f(0) = func(h_step, h_step*(1));
+    A(0,0) = 2.0;
+    for (i = 1; i < n; i++){
+        A(i,i) = 2.0;
+        A(i,i-1) = -1.0;
+        A(i-1,i) = -1.0;
+        f(i) = func(h_step, h_step*(i+1));
+    }
+
+    lu(L, U, A);
+    solve(y, L, f);
+    solve(x, U, y); 
+    return x; 
+}
